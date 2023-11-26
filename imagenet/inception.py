@@ -5,27 +5,26 @@ from utee import misc
 from collections import OrderedDict
 
 
-__all__ = ['Inception3', 'inception_v3']
+__all__ = ["Inception3", "inception_v3"]
 
 
 model_urls = {
-    'inception_v3_google': 'https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth',
+    "inception_v3_google": "https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth",
 }
 
 
 def inception_v3(pretrained=False, model_root=None, **kwargs):
     if pretrained:
-        if 'transform_input' not in kwargs:
-            kwargs['transform_input'] = True
+        if "transform_input" not in kwargs:
+            kwargs["transform_input"] = True
         model = Inception3(**kwargs)
-        misc.load_state_dict(model, model_urls['inception_v3_google'], model_root)
+        misc.load_state_dict(model, model_urls["inception_v3_google"], model_root)
         return model
 
     return Inception3(**kwargs)
 
 
 class Inception3(nn.Module):
-
     def __init__(self, num_classes=1000, aux_logits=True, transform_input=False):
         super(Inception3, self).__init__()
         self.aux_logits = aux_logits
@@ -48,16 +47,13 @@ class Inception3(nn.Module):
         self.Mixed_7a = InceptionD(768)
         self.Mixed_7b = InceptionE(1280)
         self.Mixed_7c = InceptionE(2048)
-        self.group1 = nn.Sequential(
-            OrderedDict([
-                ('fc', nn.Linear(2048, num_classes))
-            ])
-        )
+        self.group1 = nn.Sequential(OrderedDict([("fc", nn.Linear(2048, num_classes))]))
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
                 import scipy.stats as stats
-                stddev = m.stddev if hasattr(m, 'stddev') else 0.1
+
+                stddev = m.stddev if hasattr(m, "stddev") else 0.1
                 X = stats.truncnorm(-2, 2, scale=stddev)
                 values = torch.Tensor(X.rvs(m.weight.data.numel()))
                 m.weight.data.copy_(values.reshape(m.weight.shape))
@@ -125,7 +121,6 @@ class Inception3(nn.Module):
 
 
 class InceptionA(nn.Module):
-
     def __init__(self, in_channels, pool_features):
         super(InceptionA, self).__init__()
         self.branch1x1 = BasicConv2d(in_channels, 64, kernel_size=1)
@@ -157,7 +152,6 @@ class InceptionA(nn.Module):
 
 
 class InceptionB(nn.Module):
-
     def __init__(self, in_channels):
         super(InceptionB, self).__init__()
         self.branch3x3 = BasicConv2d(in_channels, 384, kernel_size=3, stride=2)
@@ -180,7 +174,6 @@ class InceptionB(nn.Module):
 
 
 class InceptionC(nn.Module):
-
     def __init__(self, in_channels, channels_7x7):
         super(InceptionC, self).__init__()
         self.branch1x1 = BasicConv2d(in_channels, 192, kernel_size=1)
@@ -219,7 +212,6 @@ class InceptionC(nn.Module):
 
 
 class InceptionD(nn.Module):
-
     def __init__(self, in_channels):
         super(InceptionD, self).__init__()
         self.branch3x3_1 = BasicConv2d(in_channels, 192, kernel_size=1)
@@ -245,7 +237,6 @@ class InceptionD(nn.Module):
 
 
 class InceptionE(nn.Module):
-
     def __init__(self, in_channels):
         super(InceptionE, self).__init__()
         self.branch1x1 = BasicConv2d(in_channels, 320, kernel_size=1)
@@ -287,7 +278,6 @@ class InceptionE(nn.Module):
 
 
 class InceptionAux(nn.Module):
-
     def __init__(self, in_channels, num_classes):
         super(InceptionAux, self).__init__()
         self.conv0 = BasicConv2d(in_channels, 128, kernel_size=1)
@@ -297,11 +287,7 @@ class InceptionAux(nn.Module):
         fc = nn.Linear(768, num_classes)
         fc.stddev = 0.001
 
-        self.group1 = nn.Sequential(
-            OrderedDict([
-                ('fc', fc)
-            ])
-        )
+        self.group1 = nn.Sequential(OrderedDict([("fc", fc)]))
 
     def forward(self, x):
         # 17 x 17 x 768
@@ -319,14 +305,18 @@ class InceptionAux(nn.Module):
 
 
 class BasicConv2d(nn.Module):
-
     def __init__(self, in_channels, out_channels, **kwargs):
         super(BasicConv2d, self).__init__()
         self.group1 = nn.Sequential(
-            OrderedDict([
-                ('conv', nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)),
-                ('bn', nn.BatchNorm2d(out_channels, eps=0.001))
-            ])
+            OrderedDict(
+                [
+                    (
+                        "conv",
+                        nn.Conv2d(in_channels, out_channels, bias=False, **kwargs),
+                    ),
+                    ("bn", nn.BatchNorm2d(out_channels, eps=0.001)),
+                ]
+            )
         )
 
     def forward(self, x):

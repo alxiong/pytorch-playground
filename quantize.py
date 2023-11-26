@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 
 def main():
-    parser = argparse.ArgumentParser(description="PyTorch SVHN Example")
+    parser = argparse.ArgumentParser(description="Quantize Training")
     parser.add_argument(
         "--type", default="cifar10", help="|".join(selector.known_models)
     )
@@ -18,13 +18,15 @@ def main():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=100,
+        default=64,
         help="input batch size for training (default: 64)",
     )
     parser.add_argument("--gpu", default=None, help="index of gpus to use")
-    parser.add_argument("--ngpu", type=int, default=8, help="number of gpus to use")
     parser.add_argument(
-        "--seed", type=int, default=117, help="random seed (default: 1)"
+        "--ngpu", type=int, default=0, help="number of gpus to use (default: 0)"
+    )
+    parser.add_argument(
+        "--seed", type=int, default=42, help="random seed (default: 42)"
     )
     parser.add_argument(
         "--model_root", default="~/.torch/models/", help="folder to save the model"
@@ -38,9 +40,6 @@ def main():
         "--logdir", default="log/default", help="folder to save to the log"
     )
 
-    parser.add_argument(
-        "--input_size", type=int, default=224, help="input size of image"
-    )
     parser.add_argument(
         "--n_sample",
         type=int,
@@ -68,7 +67,7 @@ def main():
     misc.ensure_dir(args.logdir)
     args.model_root = misc.expand_user(args.model_root)
     args.data_root = misc.expand_user(args.data_root)
-    args.input_size = 299 if "inception" in args.type else args.input_size
+    args.input_size = selector.get_input_size(args.type)
     assert args.quant_method in ["linear", "minmax", "log", "tanh"]
     print("=================FLAGS==================")
     for k, v in args.__dict__.items():
