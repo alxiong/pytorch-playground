@@ -88,9 +88,10 @@ def main():
     if args.param_bits < 32:
         state_dict = model_raw.state_dict()
         state_dict_quant = OrderedDict()
-        sf_dict = OrderedDict()
+        print("====== BIT LENGTH OF state_dict ========")
         for k, v in state_dict.items():
             if "running" in k:
+                # for running stats
                 if args.bn_bits >= 32:
                     print("Ignoring {}".format(k))
                     state_dict_quant[k] = v
@@ -98,6 +99,7 @@ def main():
                 else:
                     bits = args.bn_bits
             else:
+                # for parameters
                 bits = args.param_bits
 
             if args.quant_method == "linear":
@@ -116,6 +118,7 @@ def main():
             state_dict_quant[k] = v_quant
             print(k, bits)
         model_raw.load_state_dict(state_dict_quant)
+        print("========================================")
 
     # quantize forward activation
     if args.fwd_bits < 32:
@@ -126,17 +129,9 @@ def main():
             counter=args.n_sample,
             type=args.quant_method,
         )
+        print("====== Final Model for Evaluation ======")
         print(model_raw)
-        val_ds_tmp = ds_fetcher(
-            10, data_root=args.data_root, train=False, input_size=args.input_size
-        )
-        misc.eval_model(
-            model_raw,
-            val_ds_tmp,
-            ngpu=1,
-            n_sample=args.n_sample,
-            is_imagenet=is_imagenet,
-        )
+        print("========================================")
 
     # eval model
     val_ds = ds_fetcher(
@@ -150,7 +145,9 @@ def main():
     )
 
     # print sf
+    print("==== See final scaling factor (sf) =====")
     print(model_raw)
+    print("========================================")
     res_str = "type={}, quant_method={}, param_bits={}, bn_bits={}, fwd_bits={}, overflow_rate={}, acc1={:.4f}, acc5={:.4f}".format(
         args.type,
         args.quant_method,
